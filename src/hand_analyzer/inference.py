@@ -1,7 +1,7 @@
 import cv2
 import joblib
 import numpy as np
-from features import HandPreprocessor
+from .features import HandPreprocessor
 
 # Load model outside the function to avoid reloading it on every frame
 try:
@@ -57,29 +57,29 @@ def run_live_inference():
         image = cv2.flip(image, 1)
         
         # Extract Features from the frame
-        hands_features = processor.extract_features(image)
-        
+        hands_pairs = processor.extract_features(image)
+
         # Classify each detected hand
-        if hands_features:
-            for i, features in enumerate(hands_features):
-                
+        if hands_pairs:
+            for i, (handedness, features) in enumerate(hands_pairs):
+
                 # Unpack the 7 features directly for the classify_posture function call
                 wrist_drop, middle_pip, middle_dip, index_pip, index_dip, pinky_pip, pinky_dip = features
-                
+
                 # Call the classifier function
                 predicted_label, label_text = classify_posture(
                     np.array([features])
                 )
-                
-                # Display Result
+
+                # Display Results
                 cv2.putText(
-                    image, 
-                    f"Hand {i+1}: {label_text}", 
-                    (20, 30 + i * 50), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 
-                    1, 
-                    (0, 255, 0), 
-                    2, 
+                    image,
+                    f"Hand {i+1} ({handedness}): {label_text}",
+                    (20, 30 + i * 50),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1,
+                    (0, 255, 0),
+                    2,
                     cv2.LINE_AA
                 )
 

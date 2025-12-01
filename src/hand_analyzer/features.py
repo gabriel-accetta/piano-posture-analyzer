@@ -15,7 +15,7 @@ class HandPreprocessor:
     def extract_features(self, image):
         """
         Input: OpenCV Image (BGR)
-        Output: List of lists of features [[wrist_y, pip_angle, dip_angle], ...]
+        Output: List of lists of features [[wrist_y, pip_angle, dip_angle], ...] TODO
         """
         # Convert to RGB for MediaPipe
         img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -24,8 +24,9 @@ class HandPreprocessor:
         if not results.multi_hand_landmarks:
             return []
         
-        features_list = []
-        
+        # Collect (handedness, features) pairs
+        pairs = []
+
         # Iterate through all detected hands
         for idx, landmarks in enumerate(results.multi_hand_landmarks):
             # Get handedness ("Left" or "Right")
@@ -76,9 +77,12 @@ class HandPreprocessor:
             pinky_pip = self._calculate_angle(points[17], points[18], points[20])
             pinky_dip = self._calculate_angle(points[18], points[19], points[20])
             
-            features_list.append([wrist_drop, middle_pip, middle_dip, index_pip, index_dip, pinky_pip, pinky_dip])
+            pairs.append((handedness, [wrist_drop, middle_pip, middle_dip, index_pip, index_dip, pinky_pip, pinky_dip]))
 
-        return features_list
+        # Sort pairs so that Left hands come before Right hands
+        pairs.sort(key=lambda hb: 0 if hb[0] == 'Left' else 1)
+
+        return pairs
 
     def _calculate_angle(self, a, b, c):
         """Calculates angle at b (in degrees) given points a, b, c"""

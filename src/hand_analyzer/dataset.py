@@ -2,7 +2,7 @@ import cv2
 import csv
 import os
 import sys
-from features import HandPreprocessor
+from .features import HandPreprocessor
 
 def create_hand_dataset():
     input_folder = "data/hand_videos"
@@ -41,11 +41,11 @@ def create_hand_dataset():
                 
                 # Only process every 15th frame to avoid duplicate data
                 if frame_count % 15 == 0:
-                    hands_features = processor.extract_features(frame)
-                    
+                    hands_pairs = processor.extract_features(frame)
+
                     # If hands were detected, write to CSV
-                    if hands_features:
-                        for features in hands_features:
+                    if hands_pairs:
+                        for handedness, features in hands_pairs:
                             writer.writerow([label] + features)
                         
                 frame_count += 1

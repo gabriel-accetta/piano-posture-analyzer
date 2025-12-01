@@ -36,7 +36,7 @@ def main():
         
         # 1. Extract features using our custom class
         # Note: extract_features expects BGR image, which is what opencv provides
-        features = preprocessor.extract_features(frame)
+        features_pairs = preprocessor.extract_features(frame)
         
         # 2. Get landmarks for visualization
         # We process the image again to get landmarks for drawing. 
@@ -54,9 +54,10 @@ def main():
                     mp_hands.HAND_CONNECTIONS
                 )
                 
-                # Annotate with features if available for this hand
-                if idx < len(features):
-                    wrist_drop, m_pip, m_dip, i_pip, i_dip, p_pip, p_dip = features[idx]
+                # Annotate with features if available for this hand (list of pairs)
+                if idx < len(features_pairs):
+                    handedness, feat = features_pairs[idx]
+                    wrist_drop, m_pip, m_dip, i_pip, i_dip, p_pip, p_dip = feat
                     
                     # Calculate text position (near the wrist)
                     h, w, _ = frame.shape
@@ -65,10 +66,13 @@ def main():
                     wrist_y = int(wrist.y * h)
                     
                     # Get handedness
-                    if results.multi_handedness:
-                        handedness = results.multi_handedness[idx].classification[0].label
-                    else:
-                        handedness = 'Right'
+                    # If the preprocessor returned handedness, prefer it; otherwise fall back
+                    # to MediaPipe's handedness info from results (if present).
+                    if not handedness:
+                        if results.multi_handedness:
+                            handedness = results.multi_handedness[idx].classification[0].label
+                        else:
+                            handedness = 'Right'
                     
                     # Prepare text
                     info_text = [
