@@ -3,3 +3,6 @@ mediapipe
 numpy
 scikit-learn
 jupyter
+matplotlib
+fastapi
+uvicorn

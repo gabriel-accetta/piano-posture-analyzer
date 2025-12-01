@@ -6,17 +6,18 @@ class HandPreprocessor:
     def __init__(self):
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(
-            static_image_mode=True,
+            static_image_mode=False,
             max_num_hands=2,
-            min_detection_confidence=0.7
+            min_detection_confidence=0.7,
+            model_complexity=1
         )
 
     def extract_features(self, image):
         """
         Input: OpenCV Image (BGR)
-        Output: List of lists of features [[wrist_y, pip_angle, pinky_abduction], ...]
+        Output: List of lists of features [[wrist_y, pip_angle, dip_angle], ...]
         """
-        # 1. Convert to RGB for MediaPipe
+        # Convert to RGB for MediaPipe
         img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         results = self.hands.process(img_rgb)
 
@@ -27,16 +28,13 @@ class HandPreprocessor:
         
         # Iterate through all detected hands
         for idx, landmarks in enumerate(results.multi_hand_landmarks):
-            # Get handedness (Left or Right)
-            # Note: MediaPipe assumes mirrored input by default for selfies, but here we trust the output.
-            # Label is 'Left' or 'Right'.
+            # Get handedness ("Left" or "Right")
             if results.multi_handedness:
                 handedness = results.multi_handedness[idx].classification[0].label
             else:
-                handedness = 'Right' # Default fallback
+                handedness = 'Right'
             
-            # Convert landmarks to numpy array (21 x 3)
-            # [x, y, z]
+            # Convert landmarks to numpy array (21 x 3) of [x, y, z]
             points = np.array([[lm.x, lm.y, lm.z] for lm in landmarks.landmark])
             
             # --- NORMALIZATION ---
@@ -44,7 +42,13 @@ class HandPreprocessor:
             wrist = points[0].copy()
             points = points - wrist
             
-            # 2. Normalize for handedness (Make Left hands look like Right hands)
+            # 2. Calculate Scale Factor (Distance from Wrist to Middle MCP)
+            # Since points are centered at wrist, Wrist is (0,0,0)
+            # So distance is just norm of Middle MCP (index 9)
+            scale_factor = np.linalg.norm(points[9])
+            if scale_factor == 0: scale_factor = 1.0 # Avoid division by zero
+            
+            # 3. Normalize for handedness (Make Left hands look like Right hands)
             # If Left, flip the X-axis
             if handedness == 'Left':
                 points[:, 0] = -points[:, 0]
@@ -52,34 +56,32 @@ class HandPreprocessor:
             # --- EXTRACT FEATURES ---
             # Indices:
             # 0: Wrist
-            # 9: Middle MCP
-            # 10: Middle PIP
-            # 12: Middle Tip
-            # 17: Pinky MCP
+            # 5, 6, 7, 8: Index (MCP, PIP, DIP, Tip)
+            # 9, 10, 11, 12: Middle (MCP, PIP, DIP, Tip)
+            # 17, 18, 19, 20: Pinky (MCP, PIP, DIP, Tip)
             
             # Feature 1: Wrist Drop (Relative Y of Middle MCP vs Wrist)
-            # Since wrist is at (0,0,0), this is just -points[9][1] (because y increases downwards)
-            # Original logic: wrist.y - mcp.y.
-            # Here: 0 - points[9][1] = -points[9][1].
-            wrist_drop = -points[9][1]
+            # Normalized by scale factor
+            wrist_drop = (-points[9][1]) / scale_factor
             
-            # Feature 2: Finger Curvature (Middle Finger PIP Angle)
-            # Angle at PIP (10) formed by MCP(9)-PIP(10) and Tip(12)-PIP(10)
-            pip_angle = self._calculate_angle(points[9], points[10], points[12])
+            # Feature 2: Middle Finger Curvature
+            middle_pip = self._calculate_angle(points[9], points[10], points[12])
+            middle_dip = self._calculate_angle(points[10], points[11], points[12])
             
-            # Feature 3: Pinky Abduction
-            # Angle between Middle Finger (Wrist->MCP) and Pinky (Wrist->MCP)
-            # Since wrist is origin, vectors are points[9] and points[17]
-            pinky_abduction = self._calculate_vector_angle(points[9], points[17])
+            # Feature 3: Index Finger Curvature
+            index_pip = self._calculate_angle(points[5], points[6], points[8])
+            index_dip = self._calculate_angle(points[6], points[7], points[8])
+
+            # Feature 4: Pinky Finger Curvature
+            pinky_pip = self._calculate_angle(points[17], points[18], points[20])
+            pinky_dip = self._calculate_angle(points[18], points[19], points[20])
             
-            features_list.append([wrist_drop, pip_angle, pinky_abduction])
+            features_list.append([wrist_drop, middle_pip, middle_dip, index_pip, index_dip, pinky_pip, pinky_dip])
 
         return features_list
 
     def _calculate_angle(self, a, b, c):
         """Calculates angle at b (in degrees) given points a, b, c"""
-        # Vector ba = a - b
-        # Vector bc = c - b
         v1 = a - b
         v2 = c - b
         return self._calculate_vector_angle(v1, v2)
