@@ -22,7 +22,6 @@ async def analyze_video(file: UploadFile = File(...)) -> Dict[str, Any]:
     left/right hand classifications as timestamped lists.
     """
     try:
-        # delegate blocking work to threadpool
         result = await run_in_threadpool(hand_service.analyze_uploadfile_video, file)
         return result
     except Exception as e:

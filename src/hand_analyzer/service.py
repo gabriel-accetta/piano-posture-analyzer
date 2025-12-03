@@ -70,20 +70,26 @@ class HandService:
                 # map hands to lists
                 for item in analysis:
                     hand = item.get("hand")
+                    features = item.get("features", [])
                     label_text = item.get("label", (None, ""))[1]
                     if hand == "Left":
-                        left_list.append((timestamp, label_text))
+                        left_list.append({
+                            "timestamp": timestamp,
+                            "features": features,
+                            "label": label_text
+                        })
                     else:
-                        right_list.append((timestamp, label_text))
+                        right_list.append({
+                            "timestamp": timestamp,
+                            "features": features,
+                            "label": label_text
+                        })
 
                 sample_idx += 1
 
             frame_idx += 1
 
         cap.release()
-
-        # If you want lists to be aligned by timestamps (i.e., both have value for each sampled time)
-        # one could merge by timestamp; for now we return what was detected per hand.
 
         return {"right_hand_classification": right_list, "left_hand_classification": left_list}
 
