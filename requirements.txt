@@ -2,7 +2,8 @@ opencv-python
 mediapipe
 numpy
 scikit-learn
-jupyter
 matplotlib
 fastapi
 uvicorn
+python-multipart
+websockets

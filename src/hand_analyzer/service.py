@@ -32,7 +32,7 @@ class HandService:
             results.append({
                 "hand": handedness,
                 "features": features,
-                "label": (int(pred_label), str(label_text))
+                "label": str(label_text)
             })
 
         return results

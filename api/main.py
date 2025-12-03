@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import hand, posture
+from .routers import hand, posture
 
 app = FastAPI(
     title="Piano Posture Analyzer API",
