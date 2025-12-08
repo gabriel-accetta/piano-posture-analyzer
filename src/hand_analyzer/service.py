@@ -1,7 +1,6 @@
 import tempfile
 import shutil
 import os
-import math
 from typing import List, Tuple, Dict, Any
 
 import cv2
@@ -48,8 +47,6 @@ class HandService:
             raise IOError("Could not open video file")
 
         fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
-
         interval_frames = max(1, int(round(fps * every_n_seconds)))
 
         left_list: List[Tuple[int, str]] = []
@@ -71,7 +68,7 @@ class HandService:
                 for item in analysis:
                     hand = item.get("hand")
                     features = item.get("features", [])
-                    label_text = item.get("label", (None, ""))[1]
+                    label_text = item.get("label", "")
                     if hand == "Left":
                         left_list.append({
                             "timestamp": timestamp,

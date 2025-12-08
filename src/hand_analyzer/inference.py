@@ -1,6 +1,7 @@
 import cv2
 import joblib
 import numpy as np
+import pandas as pd
 from .features import HandPreprocessor
 
 # Load model outside the function to avoid reloading it on every frame
@@ -19,6 +20,16 @@ POSTURE_LABELS = {
     4: "Collapsed Joints"
 }
 
+FEATURE_NAMES = [
+    'wrist_y_rel',
+    'pip_angle_middle',
+    'dip_angle_middle',
+    'pip_angle_index',
+    'dip_angle_index',
+    'pip_angle_pinky',
+    'dip_angle_pinky'
+]
+
 def classify_posture(features_array):
     """
     Infers the posture class based on the 7 input features.
@@ -27,9 +38,14 @@ def classify_posture(features_array):
     """
     if MODEL is None:
         return -1, "MODEL_NOT_LOADED"
-        
+    
+    # Convert numpy array to DataFrame with proper feature names
+    features_df = pd.DataFrame(features_array, columns=FEATURE_NAMES)
+    
     # Predict the class
-    prediction = MODEL.predict(features_array)[0]
+    prediction = MODEL.predict(features_df)[0]
+
+    print(f"Predicted class: {prediction}, Label: {POSTURE_LABELS.get(prediction, 'UNKNOWN')}")
     
     # Return the result
     return prediction, POSTURE_LABELS.get(prediction, "UNKNOWN")

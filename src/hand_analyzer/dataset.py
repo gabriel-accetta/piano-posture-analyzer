@@ -1,16 +1,25 @@
 import cv2
 import csv
 import os
-import sys
 from .features import HandPreprocessor
 
 def create_hand_dataset():
     input_folder = "data/hand_videos"
     output_file = "data/hand_dataset.csv"
     processor = HandPreprocessor()
+    sample_every_n_frames = 5
     
     # Define columns
-    header = ["label", "wrist_y_rel", "pip_angle_middle", "dip_angle_middle", "pip_angle_index", "dip_angle_index", "pip_angle_pinky", "dip_angle_pinky"] 
+    header = [
+        "label", 
+        "wrist_y_rel", 
+        "pip_angle_middle", 
+        "dip_angle_middle", 
+        "pip_angle_index", 
+        "dip_angle_index", 
+        "pip_angle_pinky", 
+        "dip_angle_pinky"
+    ]
     
     # Open CSV for writing
     with open(output_file, mode='w', newline='') as f:
@@ -19,7 +28,8 @@ def create_hand_dataset():
         
         # Loop through all videos in the folder
         for filename in os.listdir(input_folder):
-            if not filename.endswith(".mp4"): continue
+            if not filename.endswith((".mp4", ".mov", ".avi", ".mkv")): 
+                continue
             
             # --- AUTOMATIC LABELING LOGIC ---
             # Look for "class0", "class1", etc. in the filename
@@ -39,8 +49,8 @@ def create_hand_dataset():
                 success, frame = cap.read()
                 if not success: break
                 
-                # Only process every 15th frame to avoid duplicate data
-                if frame_count % 15 == 0:
+                # Only process every n frames to avoid duplicate data
+                if frame_count % sample_every_n_frames == 0:
                     hands_pairs = processor.extract_features(frame)
 
                     # If hands were detected, write to CSV

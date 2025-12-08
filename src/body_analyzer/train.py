@@ -6,8 +6,8 @@ import joblib
 import os
 
 def train_model():
-    DATA_PATH = "data/hand_dataset.csv"
-    MODEL_PATH = "models/rf_hand_posture_classifier.pkl"
+    DATA_PATH = "data/body_dataset.csv"
+    MODEL_PATH = "models/rf_body_posture_classifier.pkl"
     
     # Ensure the models directory exists
     os.makedirs('models', exist_ok=True)
@@ -54,13 +54,13 @@ def train_model():
     print("\n--- Model Evaluation ---")
     print(f"Accuracy: {accuracy:.4f}")
     print("Classification Report:")
-    # The labels will be the numbers 0, 1, 2, 3, 4, etc.
     print(classification_report(y_test, y_pred, zero_division=0))
     
     # --- Model Saving ---
     
     joblib.dump(rf_classifier, MODEL_PATH)
     print(f"\nModel successfully trained and saved to {MODEL_PATH}")
+
 
 if __name__ == "__main__":
     train_model()

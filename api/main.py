@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import hand, posture
+from .routers import hand, body
 
 app = FastAPI(
     title="Piano Posture Analyzer API",
@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 app.include_router(hand.router)
-app.include_router(posture.router)
+app.include_router(body.router)
 
 @app.get("/")
 async def root():

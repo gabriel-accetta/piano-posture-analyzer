@@ -1,6 +1,7 @@
 import mediapipe as mp
 import numpy as np
 import cv2
+from ..utils.angle import calculate_angle
 
 class HandPreprocessor:
     def __init__(self):
@@ -15,7 +16,7 @@ class HandPreprocessor:
     def extract_features(self, image):
         """
         Input: OpenCV Image (BGR)
-        Output: List of lists of features [[wrist_y, pip_angle, dip_angle], ...] TODO
+        Output: List of lists of features [(handedness, [wrist_drop, middle_pip, middle_dip, index_pip, index_dip, pinky_pip, pinky_dip]), ...]
         """
         # Convert to RGB for MediaPipe
         img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -66,16 +67,15 @@ class HandPreprocessor:
             wrist_drop = (-points[9][1]) / scale_factor
             
             # Feature 2: Middle Finger Curvature
-            middle_pip = self._calculate_angle(points[9], points[10], points[12])
-            middle_dip = self._calculate_angle(points[10], points[11], points[12])
+            middle_pip = calculate_angle(points[9], points[10], points[12])
+            middle_dip = calculate_angle(points[10], points[11], points[12])
             
             # Feature 3: Index Finger Curvature
-            index_pip = self._calculate_angle(points[5], points[6], points[8])
-            index_dip = self._calculate_angle(points[6], points[7], points[8])
-
+            index_pip = calculate_angle(points[5], points[6], points[8])
+            index_dip = calculate_angle(points[6], points[7], points[8])
             # Feature 4: Pinky Finger Curvature
-            pinky_pip = self._calculate_angle(points[17], points[18], points[20])
-            pinky_dip = self._calculate_angle(points[18], points[19], points[20])
+            pinky_pip = calculate_angle(points[17], points[18], points[20])
+            pinky_dip = calculate_angle(points[18], points[19], points[20])
             
             pairs.append((handedness, [wrist_drop, middle_pip, middle_dip, index_pip, index_dip, pinky_pip, pinky_dip]))
 
@@ -83,25 +83,3 @@ class HandPreprocessor:
         pairs.sort(key=lambda hb: 0 if hb[0] == 'Left' else 1)
 
         return pairs
-
-    def _calculate_angle(self, a, b, c):
-        """Calculates angle at b (in degrees) given points a, b, c"""
-        v1 = a - b
-        v2 = c - b
-        return self._calculate_vector_angle(v1, v2)
-
-    def _calculate_vector_angle(self, v1, v2):
-        """Calculates angle between two vectors in degrees"""
-        norm_v1 = np.linalg.norm(v1)
-        norm_v2 = np.linalg.norm(v2)
-        
-        if norm_v1 == 0 or norm_v2 == 0:
-            return 0.0
-            
-        dot_product = np.dot(v1, v2)
-        cos_angle = dot_product / (norm_v1 * norm_v2)
-        
-        # Clip to avoid numerical errors
-        cos_angle = np.clip(cos_angle, -1.0, 1.0)
-        
-        return np.degrees(np.arccos(cos_angle))
