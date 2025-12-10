@@ -8,3 +8,4 @@ uvicorn
 python-multipart
 websockets
 pandas
+seaborn

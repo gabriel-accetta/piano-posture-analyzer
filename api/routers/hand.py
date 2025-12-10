@@ -33,9 +33,7 @@ async def websocket_realtime(websocket: WebSocket):
     """WebSocket endpoint that accepts binary image frames (JPEG/PNG bytes)
     and returns JSON analysis results for each received frame.
 
-    The client should send binary frames (Blob) whenever possible. This
-    handler also includes a fallback for text messages that contain a
-    base64-encoded image (data URL or JSON with `image` field).
+    The client should send binary frames (Blob).
     """
     await websocket.accept()
     try:
